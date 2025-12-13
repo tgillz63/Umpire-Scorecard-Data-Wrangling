@@ -239,7 +239,7 @@ plot.show()
 ```
 
 <img src="README_files/figure-commonmark/cell-10-output-1.png"
-width="600" height="400" />
+width="800" height="400" />
 
 
 ## What does the data say about former umpire Pat Hoberg?
@@ -321,6 +321,6 @@ heat.show()
 ```
 
 <img src="README_files/figure-commonmark/cell-13-output-1.png"
-width="600" height="400" />
+width="800" height="400" />
 
    
