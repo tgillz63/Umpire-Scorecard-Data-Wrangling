@@ -239,9 +239,8 @@ plot.show()
 ```
 
 <img src="README_files/figure-commonmark/cell-10-output-1.png"
-width="480" height="384" />
+width="600" height="400" />
 
-    zsh:1: number expected
 
 ## What does the data say about former umpire Pat Hoberg?
 
@@ -322,6 +321,6 @@ heat.show()
 ```
 
 <img src="README_files/figure-commonmark/cell-13-output-1.png"
-width="480" height="384" />
+width="600" height="400" />
 
-    zsh:1: unknown file attribute: h
+   
