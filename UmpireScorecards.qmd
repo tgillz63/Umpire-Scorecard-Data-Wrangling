@@ -1,0 +1,230 @@
+---
+title: "Umpire Scorecard Data Wrangling Project"
+format: gfm
+author: 'Tommy Gillan'
+execute: 
+  warning: false
+  message: false
+  errors: false
+jupyter: python3
+---
+            
+
+
+## Who are the best umpires? 
+```{python}                        
+#| results: 'hide'
+import pandas as pd
+from plotnine import*
+from sklearn.model_selection import train_test_split
+import statsmodels.api as sm
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+
+ump_df= pd.read_csv('/Users/tommygillan/Downloads/mlb-umpire-scorecard.csv')
+ump_df.shape
+
+```
+
+
+### There are numeric variables stored as strings here that need to be converted to work with the data.
+
+```{python}
+cols = ump_df.columns[6:20]
+ump_df[cols] = ump_df[cols].apply(pd.to_numeric, errors='coerce')
+```
+
+
+
+### Highest avg accuracy, consistency, and total run impact sorted with std deviation included. It is shown that there isn't a huge difference between the best and worst umpires when looking at accuracy and consistency. 
+
+```{python}
+#| results: 'hide'
+accuracy=ump_df.groupby('umpire')['accuracy'].aggregate(['mean', 'std']).sort_values(by='mean',ascending=False)
+accuracy.head(20)
+consistency=ump_df.groupby('umpire')['consistency'].aggregate(['mean', 'std']).sort_values(by='mean',ascending=False)
+consistency.head(20)
+total_impact=ump_df.groupby('umpire')['total_run_impact'].mean().sort_values(ascending=False)
+total_impact
+
+```
+
+
+### Created a playoff vs regular season boolean variable ere and summed the amount of playoff games each umpire worked. In general this is a good metric to tell how good an umpire is because only the best work in the playoffs. But this dataset only shows games umpired behind home plate and many of these umpires are rotating as field umpires during the playoffs as well. 
+
+```{python}
+ump_df['date'] = pd.to_datetime(ump_df['date'],errors='coerce')
+ump_df['playoff_game'] = ump_df['date'].dt.month.isin([10, 11])
+playoff_counts = ump_df.groupby('umpire')['playoff_game'].sum().sort_values(ascending=False)
+playoff_counts.head(15)
+
+```
+
+### Merging accuracy and consistency tables created above, as well as number of playoff games umpired. It is shown here that the umpires with the highest accuracy are not neccesarily the ones doing a ton of playoff games. 
+```{python}
+merge1=pd.merge(accuracy, consistency, on='umpire',how='left')
+merge1 = merge1.rename(columns={
+    'mean_x': 'accuracy_mean',
+    'std_x': 'accuracy_std',
+    'mean_y': 'consistency_mean',
+    'std_y': 'consistency_std',
+    })
+merge2= pd.merge(merge1, playoff_counts, on='umpire', how='left')
+merge2
+
+top10 = merge2.sort_values('accuracy_mean', ascending=False).head(10)
+top10
+```
+
+   
+
+
+
+
+
+## Total run impact linear regression, when looking at the absolute value of the coeffients imcorrect calls will have over twice the impact of correct calls and correct calls above expected. 
+
+```{python}
+dropped_ump=ump_df.dropna()
+
+x=dropped_ump.drop(['total_run_impact','umpire','home','away','id','date', 'playoff_game'] ,axis=1)
+y=dropped_ump['total_run_impact']
+x['accuracy_above'] = dropped_ump['correct_calls_above_expected'] * dropped_ump['accuracy_above_expected']
+x['pitchs_correct'] = dropped_ump['pitches_called'] * dropped_ump['correct_calls']
+X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+X_sm = sm.add_constant(x)  
+model = sm.OLS(y, X_sm).fit()
+print(model.summary())
+```
+
+
+## How many games were 'decided by umpires?(Game result flipped as a result of directional run impact). 296 games flipped by incorrect umpire calls!  What umpires decided the most games? Lance Barrett, Doug Eddings, Joe West, Vic Carapazza, Phil Cuzzi. 
+          
+```{python}
+#| results: 'hide'
+def posneg(x):
+    if x>0: return 1
+    if x<0: return -1
+    else: return 0
+
+ump_df=ump_df.dropna(subset='favor_home')
+blowngames = 0
+blown_rows = []
+
+for i in range(len(ump_df)):
+    row = ump_df.iloc[i]
+
+    margin = row['home_team_runs'] - row['away_team_runs']
+    home_adj = row['home_team_runs'] - row['favor_home']
+    adj_diff = home_adj - row['away_team_runs']
+
+    if posneg(margin) != posneg(adj_diff):
+        blowngames += 1
+        blown_rows.append(row)
+
+blowngames
+blown_df=pd.DataFrame(blown_rows)
+blown_df
+
+blown_df['umpire'].value_counts().head(25)
+```
+
+
+### signicantly more average pitches in a blown game, 154.562 compared to 170.739 .
+
+```{python}
+#| results: 'hide'
+blown_df['pitches_called'].mean()
+ump_df['pitches_called'].mean()
+blownavg= blown_df.aggregate('mean', numeric_only=True)
+blownavg
+```
+
+
+
+### What teams were most affected by blown games? In this dataset, Washington Nationals, Atlanta Braves, New York Yankees, Clevland Guardians, and Boston Red Sox. 
+
+```{python}
+blown_df
+blown_df.loc[blown_df['home'] > blown_df['away'], 'team_cheated'] = blown_df['home']
+blown_df.loc[blown_df['home'] <= blown_df['away'], 'team_cheated'] = blown_df['home']
+blown_df['team_cheated'].value_counts()
+
+plot=(ggplot(blown_df, aes(x='team_cheated'))
+ + geom_bar(fill='red')  
+ +theme(
+    axis_text_x = element_text(angle = 90),
+     panel_grid_major=element_blank(),
+     panel_grid_minor=element_blank(),
+     panel_border=element_blank(),
+     panel_background=element_blank()
+ )
+ + labs(title='Count of Losses Caused By Umpires', x='Team', y='Count')
+)
+
+plot.show()
+
+```
+
+
+
+## What does the data say about former umpire Pat Hoberg?
+
+### Only one perfect game(100% accuracy) in dataset  by Pat Hoberg in game 2 of 2022 World Series.
+
+```{python}
+#| results: 'hide'
+perfect_accuracy= ump_df[ump_df['accuracy']==100]
+perfect_accuracy
+```
+
+
+### Set up heatmap of Hoberg mean scores vs total avg accross all games.
+
+```{python}
+pat_h=ump_df[ump_df['umpire']=='Pat Hoberg']
+pat_worst= pat_h.loc[pat_h['accuracy'].idxmin()]
+pat_avg=pat_h.mean(numeric_only=True)
+total_avg=ump_df.mean(numeric_only=True)
+total_avg
+
+compare = pd.concat([pat_avg, total_avg], axis=1, ignore_index=True)
+compare=pd.concat([compare, blownavg], axis=1, ignore_index=True)
+compare
+
+compare.drop(['id','home_team_runs','away_team_runs','pitches_called','favor_home','incorrect_calls','expected_incorrect_calls',
+'accuracy_above_expected','total_run_impact','playoff_game','expected_correct_calls'],axis=0, inplace=True)
+
+compare
+
+compare = compare.reset_index().melt(id_vars="index", 
+                                     var_name="Hoiberg_vs_Avg_vs_Blown", 
+                                     value_name="value")
+```
+
+### The 0 column is Hoberg's averages, the 1 column is the averages across all games, the 2 column is the averages of blown games. By all metrics both in the heatmap and rest of dataset Pat Hoberg was an outstanding umpire who most likely did not engage in any nefarious gambling activity when it comes to the games he worked. 
+
+```{python}
+compare
+compare
+compare['value'] = pd.to_numeric(compare['value'], errors='coerce')
+compare['value'] = compare['value'].round(2)
+
+heat=( ggplot(compare, aes(x='Hoiberg_vs_Avg_vs_Blown', y='index', fill="value"))
+    + geom_tile()
+    + geom_text(aes(label='value'), color="white")
+    + scale_fill_gradient(low="red", high="blue")
+    + labs(
+        title="Heatmap of Metrics vs Hoiberg Comparison",
+        x="Hoiberg vs Avg vs Blown Avg",
+        y="Metric"
+    )
+    + theme(
+        figure_size=(8, 4),
+        axis_text_x=element_text(rotation=45, hjust=1)
+    )
+)
+heat.show()
+
+
+```
