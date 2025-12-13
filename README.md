@@ -125,7 +125,7 @@ print(model.summary())
     Model:                            OLS   Adj. R-squared:                  0.673
     Method:                 Least Squares   F-statistic:                     3106.
     Date:                Sat, 13 Dec 2025   Prob (F-statistic):               0.00
-    Time:                        02:22:26   Log-Likelihood:                -10904.
+    Time:                        02:53:57   Log-Likelihood:                -10904.
     No. Observations:               18093   AIC:                         2.183e+04
     Df Residuals:                   18080   BIC:                         2.194e+04
     Df Model:                          12                                         
@@ -235,10 +235,13 @@ plot=(ggplot(blown_df, aes(x='team_cheated'))
 )
 
 plot.show()
+![BarChart](cell-10-output-1.png)
 ```
 
 <img src="README_files/figure-commonmark/cell-10-output-1.png"
 width="480" height="384" />
+
+    zsh:1: number expected
 
 ## What does the data say about former umpire Pat Hoberg?
 
@@ -314,7 +317,11 @@ heat=( ggplot(compare, aes(x='Hoiberg_vs_Avg_vs_Blown', y='index', fill="value")
     )
 ) 
 heat.show()
+           
+![Heatmap](heatmap.png)
 ```
 
 <img src="README_files/figure-commonmark/cell-13-output-1.png"
 width="480" height="384" />
+
+    zsh:1: unknown file attribute: h
