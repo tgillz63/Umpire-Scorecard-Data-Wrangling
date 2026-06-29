@@ -15,7 +15,7 @@ This project digs into the public Umpire Scorecards dataset to put real numbers 
 
 ---
 
-> ### TOO LONG;DIDN'T READ
+> ### Too Long; Didn't Read
 > - **The data.** A dataset of MLB home-plate umpire scorecards, one row per game, with a block of accuracy metrics stored as strings that needed cleaning before any math could happen.
 > - **The questions.** Which umpires call the most accurate game, what a missed call does to the run impact, how often an umpire flips a result, and whether the numbers show anything off about a scandal-tied name.
 > - **A few findings.** The gap between the best and worst umpires is surprisingly small. In absolute terms, an incorrect call carries more than twice the run impact of a correct one. And 296 games in the dataset had their outcome flipped by the net of a home-plate umpire's missed calls.
