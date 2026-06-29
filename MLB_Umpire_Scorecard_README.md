@@ -15,7 +15,7 @@ This project digs into the public Umpire Scorecards dataset to put real numbers 
 
 ---
 
-> ### TL;DR
+> ### TOO LONG;DIDN'T READ
 > - **The data.** A dataset of MLB home-plate umpire scorecards, one row per game, with a block of accuracy metrics stored as strings that needed cleaning before any math could happen.
 > - **The questions.** Which umpires call the most accurate game, what a missed call does to the run impact, how often an umpire flips a result, and whether the numbers show anything off about a scandal-tied name.
 > - **A few findings.** The gap between the best and worst umpires is surprisingly small. In absolute terms, an incorrect call carries more than twice the run impact of a correct one. And 296 games in the dataset had their outcome flipped by the net of a home-plate umpire's missed calls.
@@ -42,7 +42,7 @@ This project digs into the public Umpire Scorecards dataset to put real numbers 
 
 ## 1. The Questions
 
-Every pitch a catcher takes turns into a judgment call, and over a full season those calls pile up into real wins and losses. The Umpire Scorecards data puts a number on each home-plate umpire's accuracy, game by game, which opens the door to a few questions worth chasing.
+Every close pitch a batter takes turns into a judgment call, and over a full season those calls pile up into real wins and losses. The Umpire Scorecards data puts a number on each home-plate umpire's accuracy, game by game, which opens the door to a few questions worth chasing.
 
 Who actually calls the most accurate game? Does accuracy line up with the umpires who get the playoff assignments? When a call goes wrong, how much does it move the result? And in a sport that has started taking gambling integrity seriously, does the on-field data show anything strange about an umpire who got caught up in a scandal?
 
@@ -55,8 +55,6 @@ I came to this one with a personal stake. I umpired baseball for years, so who c
 The source is the public Umpire Scorecards dataset, with one row per game and the home-plate umpire's full call breakdown attached: pitches called, correct and incorrect calls, expected values for each, an accuracy score, a consistency score, a home-favoritism measure, and the total run impact of the night's missed calls.
 
 The catch was that a block of these numeric columns came in as strings, which makes any math impossible until they are converted. The first real step was coercing those columns to numbers and letting the unparseable values fall out as missing. From there the dates got parsed into proper datetimes, which later powered a playoff-game flag, and rows missing key fields got dropped wherever a clean calculation required it.
-
-This is the unglamorous part of the job, and it is where a lot of analyses quietly go wrong. Numbers that look fine in a table can be text under the hood, and one un-coerced column will break a groupby or silently poison a regression.
 
 ---
 
@@ -79,7 +77,7 @@ flowchart TD
 
 ## 4. Ranking the Umpires
 
-The first pass grouped every game by umpire and pulled the average accuracy and consistency, each with its standard deviation, plus the average run impact. The headline from that exercise was almost an anti-climax. The spread between the best and worst umpires on accuracy and consistency is thin. The league's plate umpires are, as a group, very good and very similar.
+The first pass grouped every game by umpire and pulled the average accuracy and consistency, each with its standard deviation, plus the average run impact. The headline from that exercise was almost an anti-climax. The spread between the best and worst umpires on accuracy and consistency is thin. The league's plate umpires are elite and very similar.
 
 To add a quality signal beyond the raw scores, I flagged playoff games using the calendar (October and November dates) and counted how many each umpire worked behind the plate. The logic is that the league saves its biggest assignments for its best people, so playoff volume should track quality. That signal comes with a real caveat. This dataset logs only home-plate games, and umpires rotate to the bases during a playoff series, so the count understates how much postseason work each one saw.
 
@@ -108,8 +106,7 @@ Each game in the data carries a total run impact, the net run value of the umpir
 
 The model explains about 67% of the variance in run impact, and the coefficients tell a tidy story. In absolute terms, an incorrect call carries more than twice the run-impact weight of a correct call or a correct call above expectation. A blown call simply moves the game more than a good one does, which fits how a single missed strike three in a tight spot can swing an inning.
 
-A word of caution belongs right here, and the model itself raises it. The condition number on this regression is enormous, a red flag for severe multicollinearity. That makes sense, because total run impact is built out of the very call counts being used to predict it, so the features overlap heavily with one another and with the target. The directional read holds up and matches intuition, but the precise coefficient values and their standard errors should be treated as shaky rather than exact.
-
+A word of caution belongs right here, and the model itself raises it. The condition number on this regression is enormous, a red flag for severe multicollinearity. That makes sense, because total run impact is built out of the very call counts being used to predict it, so the features overlap heavily with one another and with the target. 
 ---
 
 ## 6. Games Decided by Umpires
@@ -122,9 +119,9 @@ Flipped games also looked different under the hood. They ran longer, averaging a
 
 I also charted how often each team turned up in these flipped games. Counted by home team, the Nationals, Braves, Yankees, Guardians, and Red Sox came out on top.
 
-![Count of flipped games by home team](reports/figures/flipped_games_by_team.png)
+<img width="1111" height="413" alt="Screenshot 2026-06-29 at 5 13 19 PM" src="https://github.com/user-attachments/assets/32518a57-2e92-4c54-9501-6b9dc6f16a27" />
 
-*Home teams appearing most often in games flipped by a home-plate umpire's net missed calls.*
+*Teams appearing most often in games flipped by a home-plate umpire's net missed calls.*
 
 ---
 
@@ -134,7 +131,8 @@ The last section turned the data toward a single name. Pat Hoberg was removed by
 
 The headline jumps out immediately. The dataset contains exactly one perfect game, a 100% accuracy night, and it belongs to Hoberg: Game 2 of the 2022 World Series, 129 called pitches, not a single one missed. To put that in context, I built a heatmap comparing his career averages against the league-wide averages and against the averages of the games that got flipped by missed calls.
 
-![Heatmap comparing Hoberg to league and flipped-game averages](reports/figures/hoberg_heatmap.png)
+<img width="615" height="308" alt="Screenshot 2026-06-29 at 5 21 33 PM" src="https://github.com/user-attachments/assets/422e20a1-f66c-44f0-880b-b8bacfaa8e9b" />
+
 
 *Pat Hoberg's average metrics against the league-wide average and the average of flipped games.*
 
@@ -143,8 +141,6 @@ The picture is consistent across every metric. Hoberg grades out as an elite, hi
 ---
 
 ## 8. Limitations
-
-I would rather name the soft spots than leave a reader to find them.
 
 - **The run-impact regression is multicollinear.** Total run impact is derived from the same call counts used to predict it, so the model overlaps with its own target and the condition number is enormous. The directional finding survives, but individual coefficients and standard errors are not trustworthy on their own.
 - **Flipped games rest on a simplified counterfactual.** Subtracting the home-favoritism value and checking for a sign change assumes those runs would have landed cleanly and the rest of the game would have played out the same way. Real games do not work that cleanly, so 296 is a useful estimate rather than a literal count of stolen wins.
@@ -225,9 +221,7 @@ matplotlib
 
 ## 13. About the Author
 
-Built by **Tommy Gillan**. I hold an M.S. in Business Analytics with a Sports Analytics concentration from the University of Notre Dame, and I have spent years in and around baseball as a player, umpire, coach, and writer.
-
-This project is the one that hits closest to home. I spent years calling games behind the plate, so a dataset that grades umpires the way this one does is something I could not leave alone. The wrangling and the regression are the analyst's half of the work. Knowing what a missed strike three in the eighth actually costs a team is the umpire's half, and this project is what happens when both halves get to weigh in.
+Built by **Tommy Gillan**. I hold an M.S. in Business Analytics with a Sports Analytics concentration from the University of Notre Dame, and I have spent years in and around baseball as a player, umpire, coach, and writer. This project is the one that hits closest to home. I spent years calling games behind the plate, so a dataset that grades umpires the way this one does is something I could not leave alone. 
 
 *Connect:* [LinkedIn](https://www.linkedin.com/in/tommy-gillan/) · [Email](mailto:thomasgillan63@gmail.com) · [Portfolio](https://github.com/tgillz63)
 
